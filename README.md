@@ -14,3 +14,5 @@ FRACTIONAL_PAPER_CV_COMBINED.r: determination of critical value in the variance-
 LocalWhittle_coverage_performance.r: confidence interval of the memory parameter based on the asymptotic normality of the local Whittle estimator
 
 LocalWhittle_general_performance.r: point estimation of the memory paramter from the local Whittle estimator
+
+auxiliary: sub-folder containing some generic functions
