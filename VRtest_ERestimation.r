@@ -8,16 +8,16 @@ library(variables);library(basefun);library(polynom);
 library(fracdiff);library(LongMemoryTS);library(arfima)
 
 ## Loading precalculated critical values of the variance-ratio test
-setwd("../code/auxiliary")
-load("CV_d1_0.5_mean_long_500_new.RData")
+setwd("C:/Users/wseo2199/Dropbox/Shang_Seo/FCIFTS/code/auxiliary")
 
+dalpha=0.6
+load(file=paste("CV_d1_",dalpha,"_mean_long_500_new.RData",sep=""))
 CVV=rbind(seq(0.7,1,0.01),MAXCV)
-dalpha=0.5
 
 ####################################################
 ## Key simulation paramters and related settings ###
 ####################################################
-SDIM=5    # K or q_{max}
+SDIM=6   # K or q_{max}
 
 d=0.95    # 1st memory paramter
 d2=0.3    # 2nd memory paramter
@@ -30,8 +30,8 @@ LRS=2     # LRS=1 : LRS-type method
 ################
 ## Simulation ##
 ################
-inner = source("/auxiliary/inprod.R")
-lrvar = source("/auxiliary/lr_var_v2_for_fractional.R")
+source("inprod.r")
+source("lr_var_v2_for_fractional.r")
 
 ## Setting for paratmeres and basis functions ##
 nnbasis=31 ;  nt = 200 ; t = (0:(nt-1))/(nt-1); lbnumber=40
@@ -54,6 +54,8 @@ for (i in 1:(lbnumber2/2)){
 }
 LBF=cbind(rep(1,length(t)),LBF)
 LBF0=LBF
+
+T=1000
 
 PI0=NULL
 for (j in 0:T)
@@ -142,28 +144,28 @@ for(i in 1:T){
 eta = LBF[,6:ncol(LBF)]%*%vecy[,i]
 x_mat[,i]=mu + y1[i]*LBF[,1]+y2[i]*LBF[,2]+y3[i]*LBF[,3]+y4[i]*LBF[,4]+y5[i]*LBF[,5]+ eta
 }
-	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),]*(t[2]-t[1])
+
+	for (TTT in nobs)
+	{
+	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),1:TTT]*(t[2]-t[1])
 	xcoef=t(hh2)
 	xcoef=t(xcoef)-rowMeans(t(xcoef))
     xcoef=t(xcoef)
 
-	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),]*(t[2]-t[1])
+	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),1:TTT]*(t[2]-t[1])
 	ycoef=t(hh2)
 	ycoef=t(ycoef-ycoef[,1])
 	ycoef=t(ycoef)
-
-	for (TTT in nobs)
-	{
 
     ddd1=NULL
 
 	for (jijj in 1:20)
 	{
-	if(LRS==1){input=t(ycoef[1:TTT,]%*%eig_col[,1])} else{input=rbind(ycoef[1:TTT,1]*rnorm(1,1,1)+ycoef[1:TTT,2]*rnorm(1,1,1)+ycoef[1:TTT,3]*rnorm(1,1,1)+ycoef[1:TTT,4]*rnorm(1,1,1)+ycoef[1:TTT,5]*rnorm(1,1,1))}
-    dd1=local.W(input,m=floor(1+TTT^0.65),int=c(0.5,1))$d
+	if(LRS==1){input=t(ycoef[1:TTT,]%*%eig_col[,1])} else{input=rbind(ycoef[1:TTT,1]*rnorm(1,1,1)+ycoef[1:TTT,2]*rnorm(1,1,1)+ycoef[1:TTT,3]*rnorm(1,1,1))}
+    dd1=local.W(input,m=floor(1+TTT^0.65),int=c(0.5,1.5))$d
 	ddd1=append(ddd1,dd1)
    	}
-    index=which(round(CVV[1,],digits=2)==round(max(max(ddd1),0.7),digits=2))
+    index=which(round(CVV[1,],digits=2)==round( min(1, max(max(ddd1),0.7)),digits=2))
 
     sdim=SDIM
 	while(sdim>=0)
@@ -209,7 +211,7 @@ if (TTT==nobs[4]){DD2d = append(DD2d,sss)}
 	lrx0 = crossprod(xcoef[1:TTT,])
     eig.lrx0 = eigen(lrx0)$vectors
     fdtmp0 = t(xcoef[1:TTT,]%*%eig.lrx0[,4:(4+sdim-1)])
-	EV=eigen(lrvar(t(fdtmp0))$omega)$values
+	EV=eigen(lr_var(t(fdtmp0))$omega)$values
 	lEV=length(EV)
 	sss=which(max(EV[1:(lEV-1)]/EV[2:(lEV)])==EV[1:(lEV-1)]/EV[2:(lEV)])
 if (TTT==nobs[1]){DD3a = append(DD3a,sss)}
@@ -222,7 +224,7 @@ if (TTT==nobs[4]){DD3d = append(DD3d,sss)}
 	lrx0 = crossprod(xcoef[1:TTT,])
     eig.lrx0 = eigen(lrx0)$vectors
     fdtmp0 = t(xcoef[1:TTT,]%*%eig.lrx0[,4:(4+sdim-1)])
-	EV=eigen(lrvar(t(fdtmp0))$omega)$values
+	EV=eigen(lr_var(t(fdtmp0))$omega)$values
 	lEV=length(EV)
 	sss=which(max(EV[1:(lEV-1)]/EV[2:(lEV)])==EV[1:(lEV-1)]/EV[2:(lEV)])
 
@@ -242,3 +244,17 @@ round(c(mean(DD1a==3), mean(DD1b==3),mean(DD1c==3),mean(DD1d==3)),digit=3)
 round(c(mean(DD2a==3), mean(DD2b==3),mean(DD2c==3),mean(DD2d==3)),digit=3)
 round(c(mean(DD3a==2), mean(DD3b==2),mean(DD3c==2),mean(DD3d==2)),digit=3)
 round(c(mean(DD4a==2), mean(DD4b==2),mean(DD4c==2),mean(DD4d==2)),digit=3)
+
+## Relative frequency of underestimation ##
+round(c(mean(DD1a<3), mean(DD1b<3),mean(DD1c<3),mean(DD1d<3)),digit=3)
+round(c(mean(DD2a<3), mean(DD2b<3),mean(DD2c<3),mean(DD2d<3)),digit=3)
+round(c(mean(DD3a<2), mean(DD3b<2),mean(DD3c<2),mean(DD3d<2)),digit=3)
+round(c(mean(DD4a<2), mean(DD4b<2),mean(DD4c<2),mean(DD4d<2)),digit=3)
+
+
+
+## Relative frequency of (correct+1) estimation ##
+round(c(mean(DD1a<=4 & DD1a>=3), mean(DD1b<=4& DD1b>=3),mean(DD1c<=4& DD1c>=3),mean(DD1d<=4& DD1d>=3)),digit=3)
+round(c(mean(DD2a<=4& DD2a>=3), mean(DD2b<=4& DD2b>=3),mean(DD2c<=4& DD2c>=3),mean(DD2d<=4& DD2d>=3)),digit=3)
+round(c(mean(DD3a<2), mean(DD3b<2),mean(DD3c<2),mean(DD3d<2)),digit=3)
+round(c(mean(DD4a<2), mean(DD4b<2),mean(DD4c<2),mean(DD4d<2)),digit=3)
