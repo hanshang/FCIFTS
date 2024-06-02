@@ -8,21 +8,21 @@ library(sde);library(variables);library(basefun);
 library(polynom);library(fracdiff);library(LongMemoryTS);library(arfima)
 
 ## Loading precalculated critical values of the variance-ratio test
-setwd("../code/auxiliary")
-load("CV_d1_0.5_mean_long_500_new.RData")
+setwd("C:/Users/wseo2199/Dropbox/Shang_Seo/FCIFTS/code/auxiliary")
 
+dalpha=0.6
+load(file=paste("CV_d1_",dalpha,"_mean_long_500_new.RData",sep=""))
 CVV=rbind(seq(0.7,1,0.01),TRACECV)
-dalpha=0.5
 
 ####################################################
 ## Key simulation paramters and related settings ###
 ####################################################
-SDIM=6   ## q_max
+SDIM=6  ## q_max
 ####################################################
 ####################################################
 
-inner = source("/auxiliary/inprod.R")
-lrvar = source("/auxiliary/lr_var_v2_for_fractional.R")
+source("inprod.r")
+source("lr_var_v2_for_fractional.r")
 nnbasis=31;nt = 200;t = (0:(nt-1))/(nt-1);neigen = 20;lbnumber=40
 lbb<- Legendre_basis(numeric_var("x", support = c(0, 1)),order = lbnumber)
 lb=lbb(t)
@@ -130,27 +130,28 @@ for(i in 1:T){
 eta = LBF[,6:ncol(LBF)]%*%vecy[,i]
 x_mat[,i]=mu + y1[i]*LBF[,1]+y2[i]*LBF[,2]+y3[i]*LBF[,3]+y4[i]*LBF[,4]+y5[i]*LBF[,5]+ eta
 }
-	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),]*(t[2]-t[1])
+	
+	for (TTT in nobs)
+	{
+	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),1:TTT]*(t[2]-t[1])
 	xcoef=t(hh2)
 	xcoef=t(xcoef)-rowMeans(t(xcoef))
     xcoef=t(xcoef)
 
-	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),]*(t[2]-t[1])
+	hh2=t(LB[2:(nt),])%*%x_mat[2:(nt),1:TTT]*(t[2]-t[1])
 	ycoef=t(hh2)
 	ycoef=t(ycoef-ycoef[,1])
 	ycoef=t(ycoef)
 
-	for (TTT in nobs)
-	{
     ddd1=NULL
     LRS=2
 	for (jijj in 1:20)
 	{
-	if(LRS==1){input=t(ycoef[1:TTT,]%*%eig_col[,1])} else{input=rbind(ycoef[1:TTT,1]*rnorm(1,1,1)+ycoef[1:TTT,2]*rnorm(1,1,1)+ycoef[1:TTT,3]*rnorm(1,1,1)+ycoef[1:TTT,4]*rnorm(1,1,1)+ycoef[1:TTT,5]*rnorm(1,1,1))}
-    dd1=local.W(input,m=floor(1+TTT^0.65),int=c(0.5,1))$d
+	if(LRS==1){input=t(ycoef[1:TTT,]%*%eig_col[,1])} else{input=rbind(ycoef[1:TTT,1]*rnorm(1,1,1)+ycoef[1:TTT,2]*rnorm(1,1,1)+ycoef[1:TTT,3]*rnorm(1,1,1))}
+    dd1=local.W(input,m=floor(1+TTT^0.65),int=c(0.5,1.5))$d
 	ddd1=append(ddd1,dd1)
    	}
-    index=which(round(CVV[1,],digits=2)==round(max(max(ddd1),0.7),digits=2))
+    index=which(round(CVV[1,],digits=2)==round(min(1,max(max(ddd1),0.7)),digits=2))
 
 	sdim=SDIM
 	kdim=sdim+2
